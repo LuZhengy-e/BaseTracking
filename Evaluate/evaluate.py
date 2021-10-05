@@ -6,7 +6,7 @@ class BaseShape:
     def __init__(self, cfg: ConfigParser):
         self.cfg = cfg
 
-    def create(self):
+    def create(self, **kwargs):
         raise NotImplementedError
 
 
@@ -19,13 +19,15 @@ class Circle(BaseShape):
         self.center = list(map(float, center))
         self.end_time = int(cfg.get("Evaluate", "end_time"))
 
-    def create(self):
+    def create(self, init_angle=0):
         gt = {}
-        angle = 0
+        angle = init_angle
         omega = self.vt / self.radius
 
         gt[0] = np.array(
-            [np.cos(angle) * self.radius, np.sin(angle) * self.radius, np.pi / 2]
+            [self.center[0] + np.cos(angle) * self.radius,
+             self.center[1] + np.sin(angle) * self.radius,
+             angle + np.pi / 2]
         )
 
         for t in range(1, self.end_time):
@@ -35,7 +37,9 @@ class Circle(BaseShape):
                 real_angle = real_angle - 3 * np.pi / 2
 
             gt[t] = np.array(
-                [np.cos(angle) * self.radius, np.sin(angle) * self.radius, real_angle]
+                [self.center[0] + np.cos(angle) * self.radius,
+                 self.center[1] + np.sin(angle) * self.radius,
+                 real_angle]
             )
 
         return gt

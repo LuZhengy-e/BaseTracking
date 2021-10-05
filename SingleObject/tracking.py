@@ -54,9 +54,14 @@ class SingleTracker:
             K = np.dot(np.dot(P, G.T), np.linalg.inv(S))
 
             delta = self.updater.get_delta(hx, meas)
+            logging.info(f"predict is {x}, measurement is {meas}...")
 
             x = x + np.dot(K, delta)
             P = np.dot(I - np.dot(K, G), P)
+
+            logging.info(f"Kalman increment is {K}")
+            logging.info(f"Kalman delta is {np.dot(K, delta)}")
+            logging.info(f"covariance is {P}")
 
         self.t += 1
         self.x[self.t] = deepcopy(x)
@@ -64,6 +69,7 @@ class SingleTracker:
 
 
 if __name__ == '__main__':
+    np.random.seed(888)
     config = ConfigParser()
     config.read("config/config.cfg")
     evaluater = EvaluateFactory.get(config)
@@ -72,8 +78,13 @@ if __name__ == '__main__':
     meas = []
     R = np.identity(2) * float(config.get("Evaluate", "sigma"))
 
+    # init_x = np.array(
+    #     [0, 0, np.pi / 6, 1e6, 6.28]
+    # )
+    # init_x[0:2] = ground_truth[0][0:2]
+
     init_x = np.array(
-        [0, 0, np.pi / 2, -0.005, 6.28]
+        [0, 0, np.pi / 6, 0, 6.28]
     )
     init_x[0:2] = ground_truth[0][0:2]
 
@@ -88,7 +99,8 @@ if __name__ == '__main__':
     pd = float(config.get("Evaluate", "pd"))
 
     for t, pos in ground_truth.items():
-        z = np.zeros((3, ), dtype=float)
+        logging.info(f"-----------time_{t}------------")
+        z = np.zeros((3,), dtype=float)
         z[0:2] = np.random.multivariate_normal(ground_truth[t][0:2], R)
 
         angle = ground_truth[t][2]
@@ -105,15 +117,15 @@ if __name__ == '__main__':
             else:
                 tracker.update(x=x, P=P)
 
-        logging.info(f"-----------time_{t}------------")
         logging.info(f"pos is {tracker.x[t][0:2]}, "
                      f"gt is {ground_truth[t][0:2]},"
                      f"meas is {meas[t][0:2]}...")
         logging.info(f"angle is {tracker.x[t][2]}, "
                      f"gt is {ground_truth[t][2]},"
                      f"meas is {meas[t][2]}......")
-        logging.info(f"R is {1 / tracker.x[t][3]}")
-        logging.info(f"velocity is {tracker.x[t][4]}")
+        logging.info(f"R is {tracker.x[t][3]}, "
+                     f"k is {1 / tracker.x[t][3]}...")
+        logging.info(f"velocity is {tracker.x[t][4]}...")
 
     # plot
     end_time = len(meas)
@@ -128,12 +140,13 @@ if __name__ == '__main__':
                  [tracker.x[t][1], tracker.x[t + 1][1]], c="blue")
 
     plt.axis('equal')
+    plt.title("CCV")
     plt.xlabel(xlabel='x position/m')
     plt.ylabel(ylabel='y position/m')
+    plt.savefig("CCVL.png")
 
     plt.figure()
     times = list(ground_truth.keys())
     plt.plot(times, [np.linalg.norm(tracker.x[t][0:2] - ground_truth[t][0:2]) for t in times], c="red")
     plt.plot(times, [np.linalg.norm(meas[t][0:2] - ground_truth[t][0:2]) for t in times], c="black")
     plt.show()
-

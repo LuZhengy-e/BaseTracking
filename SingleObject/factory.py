@@ -3,13 +3,14 @@ import sys
 from configparser import ConfigParser
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from filter.predictor import CCVPredictor, CVPredictor
+from filter.predictor import CCVPredictor, CCVInvPredictor, CVPredictor
 from filter.updater import LinearUpdater
 
 
 class PredictFactory:
     factory = {
         "CCV": CCVPredictor,
+        "CCVInv": CCVInvPredictor,
         "CV": CVPredictor
     }
 
